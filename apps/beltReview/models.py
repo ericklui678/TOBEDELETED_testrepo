@@ -47,7 +47,7 @@ class UserManager(models.Manager):
             # Hash pw with password and salt
             hashed_pw = bcrypt.hashpw(password, salt)
             # add to database
-            User.objects.create(first_name=postData['first_name'], last_name=postData['last_name'], email=postData['email'], password=hashed_pw)
+            User.objects.create(first_name=postData['first_name'], last_name=postData['last_name'], alias=postData['alias'], email=postData['email'], password=hashed_pw)
 
         return errors
 
@@ -78,4 +78,13 @@ class User(models.Model):
     objects = UserManager()
 
     def __str__(self):
-        return str(self.id) + ' - ' + self.first_name + ' ' + self.last_name + ' - ' +  self.alias + ' - ' + self.email + ' - ' + self.password
+        return str(self.id) + ' - ' + self.first_name + ' ' + self.last_name + ' - ' + self.alias + ' - ' + self.email + ' - ' + self.password
+
+class Author(models.Model):
+    first_name = models.CharField(max_length=45)
+    last_name = models.CharField(max_length=45)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return str(self.id) + ' - ' + self.first_name + ' - ' + self.last_name
