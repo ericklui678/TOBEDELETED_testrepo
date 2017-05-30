@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Book Information</title>
+    </head>
+    <body>
+        <a href="/reviews">Home</a>
+        <a href="/">Logout</a>
+        <h1>{{ books.title }}</h1>
+        <p>Author: {{ books.author.first_name }} {{ books.author.last_name }}</p>
+        <form action="/review/{{ books.id }}" method="post">
+            {% csrf_token %}
+            <h3>Add a Review:</h3>
+            <textarea name="review" rows="8" cols="80"></textarea>
+            <p>Rating
+                <select name="rating">
+                    <option value="5">5</option>
+                    <option value="4">4</option>
+                    <option value="3">3</option>
+                    <option value="2">2</option>
+                    <option value="1">1</option>
+                </select>
+            </p>
+            <input type="submit" name="submit" value="Submit Review">
+        </form>
+        {% if messages %}
+            {% for message in messages %}
+                <ul>
+                    <li>{{message}}</li>
+                </ul>
+            {% endfor %}
+        {% endif %}
+        <h1>Reviews</h1>
+        {% for review in reviews %}
+            <p>Rating: {{ review.rating }}</p>
+            <p><a href="/users/{{ review.user_id }}">{{ review.user.first_name }}</a> says: {{ review.review }}</p>
+            <p>{{ review.created_at }}</p>
+            {% if review.user_id == request.session.id %}
+                <form action="/delete/{{ review.id }}" method="post">
+                    {% csrf_token %}
+                    <input type="submit" name="submit" value="Delete this Review">
+                </form>
+            {% endif %}
+            -------------------------------------
+        {% endfor %}
+    </body>
+</html>

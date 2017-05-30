@@ -142,6 +142,15 @@ class Book(models.Model):
     def __str__(self):
         return str(self.id) + ' - ' + self.title + ' - ' + str(self.author_id)
 
+class ReviewManager(models.Manager):
+    def simple_check(self, postData):
+        errors = []
+        if len(postData['review']) < 10:
+            errors.append('Review must be at least 10 characters')
+        else:
+            Review.objects.create(review=postData['review'], rating=postData['rating'], user_id=postData['user_id'], book_id=postData['book_id'])
+        return errors
+
 class Review(models.Model):
     review = models.TextField(max_length=1000)
     rating = models.IntegerField()
@@ -149,6 +158,8 @@ class Review(models.Model):
     book = models.ForeignKey(Book, related_name='reviews')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    objects = ReviewManager()
 
     def __str__(self):
         return str(self.id) + ' - ' + self.review + ' - ' + str(self.rating) + ' - ' + str(self.user_id) + ' - ' + str(self.book_id)

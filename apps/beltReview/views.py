@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.db.models.functions import Concat
 from django.db.models import CharField, Value as V
 from .models import User, Author, Book, Review
+from django.http import HttpResponseRedirect
 
 def index(request):
     return render(request, 'beltReview/index.html')
@@ -30,7 +31,6 @@ def login(request):
         'email': request.POST['email'],
         'password': request.POST['password']
     }
-    print postData
     errors = User.objects.login(postData)
     if len(errors) == 0:
         request.session['id'] = User.objects.get(email=postData['email']).id
@@ -41,29 +41,9 @@ def login(request):
     return redirect('/')
 
 def reviews(request):
-    # authors = Author.objects.all()
-    # print 'AUTHORS'
-    # for author in authors:
-    #     print author
-    # print
-    # print 'BOOKS'
-    # books = Book.objects.all()
-    # for book in books:
-    #     print book
-    # print
-    # print 'REVIEWS'
-    # print book_reviews
-    # for review in reviews:
-    #     print review
-
-    # print 'LIST HERE'
-    # for review in reviews:
-    #     print review.book.title
     book_reviews = []
-    reviews = Review.objects.values_list('book_id', flat=True).distinct()
-    for book_id in reviews:
-        book_reviews.append(Book.objects.get(id=book_id).title)
-    print book_reviews
+    for review in Review.objects.raw("SELECT * FROM beltreview_review GROUP BY book_id"):
+        book_reviews.append(review)
     context = {
         'reviews': Review.objects.all().order_by('-created_at')[:3],
         'book_reviews': book_reviews,
@@ -89,6 +69,40 @@ def add(request):
     errors = Author.objects.check_review(postData)
     print 'ERRORS:', errors
     if len(errors) == 0:
-        print 'inside no error if statement'
         return redirect('/reviews')
     return redirect('/add_review')
+
+def book_info(request, id):
+    context = {
+        'reviews': Review.objects.filter(book_id=id).order_by('-created_at'),
+        'books': Book.objects.get(id=id),
+    }
+    return render(request, 'beltReview/bookinfo.html', context)
+
+def add_book_review(request, id):
+    postData = {
+        'review': request.POST['review'],
+        'rating': request.POST['rating'],
+        'book_id': id,
+        'user_id': request.session['id'],
+    }
+    errors = Review.objects.simple_check(postData)
+    if len(errors) > 0:
+        messages.info(request, errors[0])
+    # return to current page
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
+def delete(request, id):
+    Review.objects.get(id=id).delete()
+    return redirect('/reviews')
+
+def users(request, id):
+    my_reviews = []
+    for review in Review.objects.raw("SELECT * FROM beltreview_review LEFT JOIN beltreview_book ON beltreview_review.book_id = beltreview_book.id WHERE beltreview_review.user_id = %s GROUP BY beltreview_book.title", [id]):
+        my_reviews.append(review)
+    context = {
+        'user': User.objects.get(id=id),
+        'reviews': Review.objects.filter(user_id=id).count(),
+        'my_reviews': my_reviews,
+    }
+    return render(request,'beltReview/user.html', context)
