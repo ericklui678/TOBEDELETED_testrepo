@@ -80,11 +80,75 @@ class User(models.Model):
     def __str__(self):
         return str(self.id) + ' - ' + self.first_name + ' ' + self.last_name + ' - ' + self.alias + ' - ' + self.email + ' - ' + self.password
 
+class AuthorManager(models.Manager):
+    def check_review(self, postData):
+        errors = []
+        # Validate book title
+        if len(postData['title']) < 2:
+            errors.append('Title must be at least 2 characters')
+        # Validate review
+        if len(postData['review']) < 10:
+            errors.append('Review must be at least 10 characters')
+        # Validate first_name
+        if len(postData['first_name']) < 2:
+            errors.append('First name must be at least 2 characters')
+        elif not NAME_REGEX.match(postData['first_name']):
+            errors.append('First name can only be alphabet')
+        # Validate last_name
+        if len(postData['last_name']) < 2:
+            errors.append('Last name must be at least 2 characters')
+        elif not NAME_REGEX.match(postData['last_name']):
+            errors.append('Last name can only be alphabet')
+
+        if len(errors) == 0:
+            author = Author.objects.filter(first_name=postData['first_name'], last_name=postData['last_name'])
+            title = Book.objects.filter(title=postData['title'])
+            # If author and book title already exist, only update Review table
+            if author.count() and title.count():
+                book_id = Book.objects.filter(title=postData['title'], author_id=author[0].id)[0].id
+                Review.objects.create(review=postData['review'], rating=postData['rating'], user_id=postData['user_id'], book_id=book_id)
+            # If author already exists, add new book to Book table and update Review
+            elif author.count():
+                Book.objects.create(title=postData['title'], author_id=author[0].id)
+                Review.objects.create(review=postData['review'], rating=postData['rating'], user_id=postData['user_id'], book_id=Book.objects.latest('id').id)
+            # If author does not exist, update Author, Book, and Review
+            else:
+                Author.objects.create(first_name=postData['first_name'],last_name=postData['last_name'])
+                Book.objects.create(title=postData['title'], author_id=Author.objects.latest('id').id)
+                Review.objects.create(review=postData['review'], rating=postData['rating'], user_id=postData['user_id'], book_id=Book.objects.latest('id').id)
+
+        return errors
+        # If user doesn't enter a name, use the author in dropdown menu
+        # else:
+
+
 class Author(models.Model):
     first_name = models.CharField(max_length=45)
     last_name = models.CharField(max_length=45)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    objects = AuthorManager()
+
     def __str__(self):
         return str(self.id) + ' - ' + self.first_name + ' - ' + self.last_name
+
+class Book(models.Model):
+    title = models.CharField(max_length=45)
+    author = models.ForeignKey(Author, related_name='books')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return str(self.id) + ' - ' + self.title + ' - ' + str(self.author_id)
+
+class Review(models.Model):
+    review = models.TextField(max_length=1000)
+    rating = models.IntegerField()
+    user = models.ForeignKey(User, related_name='reviews')
+    book = models.ForeignKey(Book, related_name='reviews')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return str(self.id) + ' - ' + self.review + ' - ' + str(self.rating) + ' - ' + str(self.user_id) + ' - ' + str(self.book_id)

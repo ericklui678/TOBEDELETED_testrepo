@@ -12,12 +12,8 @@
             {% csrf_token %}
             <p>Book Title: <input type="text" name="title"></p>
             <p>Author:</p>
-            <ul>
-                <li>Choose from the list</li>
-                <select name='authorID'>
-                    
-                </select>
-                <li>Or add a new author <input type="text" name="first_name" placeholder="First name"> <input type="text" name="last_name" placeholder="Last name"></li>
+            <input type="text" name="first_name" placeholder="First name">
+            <input type="text" name="last_name" placeholder="Last name">
                 <p>Review</p>
                 <textarea name="review" rows="8" cols="80"></textarea>
                 <p>Rating
@@ -29,7 +25,6 @@
                         <option value="1">1</option>
                     </select>
                 </p>
-            </ul>
             <input type="submit" name="submit" value="Add Book and Review">
         </form>
     </body>

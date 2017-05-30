@@ -8,5 +8,16 @@
         <h1>Welcome, {{ request.session.name }}</h1>
         <a href="/">Logout</a>
         <a href="/add_review">Add Book and Review</a>
+        {% for review in reviews %}
+            <p>Title: {{ review.book.title }}</p>
+            <p>Rating: {{ review.rating }}</p>
+            <p>{{ review.user.first_name }} says: {{ review.review }}</p>
+            <p>Posted on {{ review.created_at }}</p>
+            <br>
+        {% endfor %}
+        <h1>Other Books with Reviews</h1>
+        {% for review in book_reviews %}
+            <p>{{ review }}</p>
+        {% endfor %}
     </body>
 </html>
